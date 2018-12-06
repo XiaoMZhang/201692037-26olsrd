@@ -1,1 +1,11 @@
+void set_empty_tc_timer(uint32_t);    	//设置空白追踪包的定时器
 
+uint32_t get_empty_tc_timer(void);
+
+bool queue_hello(struct hello_message *, struct interface *); //生成hello message，并按照协议版本切割成合适的大小,成功返回true，不正确返回false
+
+bool queue_tc(struct tc_message *, struct interface *);	//生成TC message，并按照协议版本切割成合适的大小,成功返回true，不正确返回false
+
+bool queue_mid(struct interface *);//生成MID message，并按照协议版本切割成合适的大小,成功返回true，不正确返回false
+
+bool queue_hna(struct interface *);//生成HNA message，并按照协议版本切割成合适的大小,成功返回true，不正确返回false
